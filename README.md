@@ -225,5 +225,27 @@ src/main/java/com/ing/hubs/loan/api
 └── validation/      # Validation (context, rules, executors)
 
 ```
+## Planned Improvements
+
+### 1. Idempotency
+- Add `Idempotency-Key` header support to prevent duplicate loan payments  
+  (e.g., when the same request is retried due to network issues).
+
+### 2. Test Coverage ≥ 80%
+- Improve existing unit and integration tests.
+- Ensure full coverage for Service and Controller layers.
+- Integrate JaCoCo or SonarQube for reporting.
+
+### 3. JWT Authentication
+- Generate JWT token upon login.
+- Secure API requests with `Authorization: Bearer <token>`.
+- Add refresh token mechanism for long-lived sessions.
+- Extend Spring Security configuration with JWT filters.
+
+### 4. Logging
+- Add centralized logging for all API requests and responses.
+- Include request IDs for traceability.
+- Log critical errors and validation failures for monitoring and debugging.
+
 
 ---
