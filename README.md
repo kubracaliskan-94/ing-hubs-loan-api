@@ -116,6 +116,48 @@ http://localhost:8080/swagger-ui/index.html
 **Note:** Customers can **only access their own data**. They cannot retrieve loans or installments belonging to other customers. This is enforced through AOP-based authorization checks (`@CheckLoanAccessForCustomerId` / `@CheckLoanAccessForLoanId`).
 
 ---
+##  Test the API
+
+You can test the API using **Swagger UI** or **cURL** with basic authentication.
+
+### 1 Using Swagger UI
+
+1. Open [Swagger UI](http://localhost:8080/swagger-ui/index.html).
+2. Click **Authorize** and log in using one of the default users.
+3. Execute endpoints directly from the UI.
+
+### 2 Using cURL
+
+#### Create a Loan (Basic Auth)
+
+```bash
+curl -u username:password -X POST "http://localhost:8080/api/v1/loans" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "customerId": 1,
+        "loanAmount": 5000,
+        "numberOfInstallments": 12,
+        "interestRate": 0.15
+      }'
+```
+
+**Sample Response:**
+
+```json
+{
+  "id": 1,
+  "customerId": 1,
+  "loanAmount": 5000,
+  "numberOfInstallments": 12,
+  "interestRate": 0.15,
+  "isPaid": false,
+  "createDate": "2025-08-22T23:53:23.9505605",
+  "updateDate": "2025-08-22T23:53:23.9505605"
+}
+```
+
+> You can use **customer1** credentials to test customer-specific endpoints. Customers will only see their own loans. Admins can access all loans.
+
 
 ## Validation & Exceptions
 
@@ -236,7 +278,7 @@ src/main/java/com/ing/hubs/loan/api
 - Ensure full coverage for Service and Controller layers.
 - Integrate JaCoCo or SonarQube for reporting.
 
-### 3. JWT Authentication
+### 3. Migration to JWT Authentication from Basic Authentication
 - Generate JWT token upon login.
 - Secure API requests with `Authorization: Bearer <token>`.
 - Add refresh token mechanism for long-lived sessions.
