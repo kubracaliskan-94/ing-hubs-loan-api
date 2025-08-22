@@ -1,25 +1,25 @@
 package com.ing.hubs.loan.api.service;
 
-import com.ing.hubs.loan.api.dto.LoanDto;
-import com.ing.hubs.loan.api.dto.LoanInstallmentDto;
+import com.ing.hubs.loan.api.controller.response.LoanPaymentResult;
+import com.ing.hubs.loan.api.model.dto.LoanDto;
+import com.ing.hubs.loan.api.model.dto.LoanInstallmentDto;
 import com.ing.hubs.loan.api.exception.ResourceNotFoundException;
 import com.ing.hubs.loan.api.mapper.CustomerMapper;
 import com.ing.hubs.loan.api.mapper.LoanInstallmentMapper;
 import com.ing.hubs.loan.api.mapper.LoanMapper;
-import com.ing.hubs.loan.api.model.Customer;
-import com.ing.hubs.loan.api.model.Employee;
-import com.ing.hubs.loan.api.model.Loan;
-import com.ing.hubs.loan.api.repository.CustomerRepository;
-import com.ing.hubs.loan.api.repository.EmployeeRepository;
+import com.ing.hubs.loan.api.model.entity.Customer;
+import com.ing.hubs.loan.api.model.entity.Loan;
 import com.ing.hubs.loan.api.repository.LoanRepository;
 import com.ing.hubs.loan.api.service.domain.LoanDomainService;
-import com.ing.hubs.loan.api.validation.LoanValidationContext;
-import com.ing.hubs.loan.api.validation.validator.LoanValidator;
+import com.ing.hubs.loan.api.validation.LoanCreationValidatorExecutor;
+import com.ing.hubs.loan.api.validation.LoanPaymentValidatorExecutor;
+import com.ing.hubs.loan.api.validation.context.LoanCreationContext;
+import com.ing.hubs.loan.api.validation.context.LoanPaymentContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.AccessDeniedException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,28 +27,39 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoanService {
     private final LoanRepository loanRepository;
-    private final CustomerRepository customerRepository;
-    private final EmployeeRepository employeeRepository;
-    private final LoanValidator loanValidator;
+
+    private final CustomerService customerService;
+    private final EmployeeService employeeService;
+
+    private final LoanCreationValidatorExecutor loanCreationValidatorExecutor;
+    private final LoanPaymentValidatorExecutor loanPaymentValidatorExecutor;
     private final LoanDomainService loanDomainService;
-    private final UserService userService;
 
     @Transactional
     public LoanDto save(LoanDto loanDto) {
-        Customer customer = customerRepository.findById(loanDto.customerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        Employee employee = employeeRepository.findById(loanDto.employeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+        Customer customer = customerService.findById(loanDto.customerId());
+        //Employee employee = employeeService.findById(loanDto.employeeId()); // current employee loggedUSer
 
+        loanCreationValidatorExecutor.validate(new LoanCreationContext(loanDto, CustomerMapper.toDto(customer)));
 
-        loanValidator.validate(new LoanValidationContext(loanDto, CustomerMapper.toDto(customer)));
-
-        Loan loan = loanDomainService.createLoan(customer, employee, loanDto);
-
+        Loan loan = loanDomainService.createLoan(customer, null, loanDto);
         loanRepository.save(loan);
-        //customerRepository.save(customer);
 
         return LoanMapper.toDto(loan);
+    }
+
+    @Transactional
+    public LoanPaymentResult payLoan(Long loanId, BigDecimal amount) {
+        Loan loan = findByIdWithInstallments(loanId);
+
+        List<LoanInstallmentDto> installmentDtoList = loan.getInstallments().stream().map(LoanInstallmentMapper::toDto).collect(Collectors.toList());
+        LoanPaymentContext context = new LoanPaymentContext(LoanMapper.toDto(loan), installmentDtoList, amount);
+        loanPaymentValidatorExecutor.validate(context);
+
+        LoanPaymentResult response = loanDomainService.payInstallments(loan, amount);
+
+        loanRepository.save(loan);
+        return response;
     }
 
     public List<LoanDto> findAll() {
@@ -58,37 +69,28 @@ public class LoanService {
                 .collect(Collectors.toList());
     }
 
-    public LoanDto findDtoById(Long id) {
-        Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with id " + id));
+    public LoanDto findById(Long loanId) {
+        Loan loan = findByIdWithInstallments(loanId);
         return LoanMapper.toDto(loan);
     }
 
-    public LoanDto findByIdForCurrentUser(Long loanId) throws AccessDeniedException {
-
-        Loan loan = loanRepository.findByIdWithInstallments(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with id " + loanId));
-        return LoanMapper.toDto(loan);
-    }
-
-    public Loan findById(Long id) {
-        return loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with id " + id));
-    }
-
-    public void delete(Long id) {
-        if (!loanRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Loan not found with id " + id);
-        }
-        loanRepository.deleteById(id);
+    public List<LoanDto> findByIdForCurrentUser(Long customerId) {
+        return loanRepository.findByCustomerId(customerId)
+                .stream()
+                .map(LoanMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public List<LoanInstallmentDto> findInstallmentsForLoan(Long loanId) {
-        Loan loan = loanRepository.findByIdWithInstallments(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with id " + loanId));
-
-        return loan.getInstallments().stream()
+        return findByIdWithInstallments(loanId)
+                .getInstallments()
+                .stream()
                 .map(LoanInstallmentMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public Loan findByIdWithInstallments(Long loanId) {
+        return loanRepository.findByIdWithInstallments(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found with id " + loanId));
     }
 }

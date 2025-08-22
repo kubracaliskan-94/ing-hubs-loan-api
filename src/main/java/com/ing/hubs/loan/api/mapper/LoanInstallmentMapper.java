@@ -1,8 +1,8 @@
 package com.ing.hubs.loan.api.mapper;
 
-import com.ing.hubs.loan.api.dto.LoanInstallmentDto;
-import com.ing.hubs.loan.api.model.Loan;
-import com.ing.hubs.loan.api.model.LoanInstallment;
+import com.ing.hubs.loan.api.model.dto.LoanInstallmentDto;
+import com.ing.hubs.loan.api.model.entity.Loan;
+import com.ing.hubs.loan.api.model.entity.LoanInstallment;
 import lombok.experimental.UtilityClass;
 
 import java.math.BigDecimal;

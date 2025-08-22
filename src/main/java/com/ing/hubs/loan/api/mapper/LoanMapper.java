@@ -1,7 +1,7 @@
 package com.ing.hubs.loan.api.mapper;
 
-import com.ing.hubs.loan.api.dto.LoanDto;
-import com.ing.hubs.loan.api.model.Loan;
+import com.ing.hubs.loan.api.model.dto.LoanDto;
+import com.ing.hubs.loan.api.model.entity.Loan;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -11,8 +11,7 @@ public class LoanMapper {
 
         return new LoanDto(
                 entity.getId(),
-                null,
-                null,
+                entity.getCustomer().getId(),
                 entity.getLoanAmount(),
                 entity.getNumberOfInstallments(),
                 entity.getInterestRate(),
@@ -26,11 +25,9 @@ public class LoanMapper {
         if (dto == null) return null;
 
         Loan loan = new Loan();
-        loan.setId(dto.id());
         loan.setLoanAmount(dto.loanAmount());
+        loan.setInterestRate(dto.interestRate());
         loan.setNumberOfInstallments(dto.numberOfInstallments());
-        loan.setCreateDate(dto.createDate());
-        loan.setIsPaid(dto.isPaid());
         return loan;
     }
 }

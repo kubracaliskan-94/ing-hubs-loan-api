@@ -1,7 +1,7 @@
 package com.ing.hubs.loan.api.mapper;
 
-import com.ing.hubs.loan.api.dto.CustomerDto;
-import com.ing.hubs.loan.api.model.Customer;
+import com.ing.hubs.loan.api.model.dto.CustomerDto;
+import com.ing.hubs.loan.api.model.entity.Customer;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -25,7 +25,7 @@ public class CustomerMapper {
         Customer entity = new Customer();
         entity.setUser(null);
         entity.setCreditLimit(dto.creditLimit());
-        entity.setUsedCreditLimit(dto.userCreditLimit());
+        entity.setUsedCreditLimit(dto.usedCreditLimit());
         entity.setCreatedAt(dto.createdAt());
         entity.setUpdatedAt(dto.updatedAt());
         return entity;

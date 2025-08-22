@@ -8,10 +8,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-//todo: do we acturally need this?
-@OpenAPIDefinition(
-        security = @SecurityRequirement(name = "basicAuth")
-)
+@OpenAPIDefinition(security = @SecurityRequirement(name = "basicAuth"))
 @Configuration
 public class OpenApiConfig {
 

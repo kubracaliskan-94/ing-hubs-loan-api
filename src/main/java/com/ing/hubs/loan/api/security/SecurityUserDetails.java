@@ -1,6 +1,6 @@
 package com.ing.hubs.loan.api.security;
 
-import com.ing.hubs.loan.api.model.User;
+import com.ing.hubs.loan.api.model.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,12 +20,10 @@ public class SecurityUserDetails implements UserDetails {
         return user.getRoles().stream()
                 .map(role -> {
                     String authority = role.getName().name();
-                    System.out.println("Mapping role: " + role + " -> authority: " + authority);
                     return new SimpleGrantedAuthority(authority);
                 })
                 .toList();
     }
-
 
     @Override
     public String getPassword() {

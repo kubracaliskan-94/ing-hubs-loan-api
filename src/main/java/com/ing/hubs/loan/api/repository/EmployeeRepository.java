@@ -1,6 +1,6 @@
 package com.ing.hubs.loan.api.repository;
 
-import com.ing.hubs.loan.api.model.Employee;
+import com.ing.hubs.loan.api.model.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

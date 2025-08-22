@@ -24,7 +24,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // Test ortamı için tüm CSRF kapat
+        http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/h2-console/**",
@@ -46,7 +46,7 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder()); // Bcrypt veya Noop
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -57,7 +57,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // DEMO için {noop} kullanıyorsan: return NoOpPasswordEncoder.getInstance();
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
         //return new BCryptPasswordEncoder();
     }

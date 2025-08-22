@@ -1,63 +1,92 @@
 package com.ing.hubs.loan.api.controller;
 
-import com.ing.hubs.loan.api.dto.LoanDto;
-import com.ing.hubs.loan.api.dto.LoanInstallmentDto;
-import com.ing.hubs.loan.api.security.CheckLoanAccess;
+import com.ing.hubs.loan.api.controller.request.LoanPaymentRequest;
+import com.ing.hubs.loan.api.controller.response.LoanPaymentResult;
+import com.ing.hubs.loan.api.model.dto.LoanDto;
+import com.ing.hubs.loan.api.model.dto.LoanInstallmentDto;
+import com.ing.hubs.loan.api.security.CheckLoanAccessForCustomerId;
+import com.ing.hubs.loan.api.security.CheckLoanAccessForLoanId;
 import com.ing.hubs.loan.api.service.LoanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/loans")
 @RequiredArgsConstructor
-@Tag(name = "Loan", description = "Manage loans")
+@Tag(name = "Loans", description = "APIs for managing loans and installments")
 public class LoanController {
 
     private final LoanService loanService;
 
-    @Operation(summary = "Create a new loan")
+    @Operation(
+            summary = "Create a new loan",
+            description = "Creates a loan for a given customer and employee. Only ADMIN and EMPLOYEE roles are allowed."
+    )
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<LoanDto> createLoan(@Valid @RequestBody LoanDto loanDto) {
-        return ResponseEntity.ok(loanService.save(loanDto));
+        LoanDto createdLoan = loanService.save(loanDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdLoan);
     }
 
-    @Operation(summary = "Get all loans")
+    @Operation(
+            summary = "Pay installments for a loan",
+            description = "Pays installments for the given loan and amount. " +
+                    "Payments must cover full installment amounts, starting with the earliest due date. " +
+                    "Installments with due dates more than 3 months ahead cannot be paid."
+    )
+    @PostMapping("/{loanId}/payments")
+    @CheckLoanAccessForLoanId
+    public ResponseEntity<LoanPaymentResult> payLoan(@PathVariable Long loanId, @Valid @RequestBody LoanPaymentRequest request) {
+        LoanPaymentResult result = loanService.payLoan(loanId, request.amount());
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "Retrieve all loans",
+            description = "Fetches all loans in the system. Restricted to ADMIN and EMPLOYEE roles."
+    )
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<List<LoanDto>> retrieveAllLoans() {
+    public ResponseEntity<List<LoanDto>> getAllLoans() {
         return ResponseEntity.ok(loanService.findAll());
     }
 
-    @Operation(summary = "Get loan by ID")
+    @Operation(
+            summary = "Retrieve a loan by ID",
+            description = "Fetches loan details for the given loan ID. Customers can only access their own loans."
+    )
     @GetMapping("/{loanId}")
-    @CheckLoanAccess
-    public ResponseEntity<LoanDto> retrieveLoanById(@PathVariable Long loanId) throws AccessDeniedException {
-        return ResponseEntity.ok(loanService.findByIdForCurrentUser(loanId));
+    @CheckLoanAccessForLoanId
+    public ResponseEntity<LoanDto> getLoanById(@PathVariable Long loanId) {
+        return ResponseEntity.ok(loanService.findById(loanId));
     }
 
+    @Operation(
+            summary = "Retrieve installments for a loan",
+            description = "Returns all installments for a given loan. Customers can only access their own installments."
+    )
     @GetMapping("/{loanId}/installments")
-    @CheckLoanAccess
-    public ResponseEntity<List<LoanInstallmentDto>> retrieveInstallments(@PathVariable Long loanId) throws AccessDeniedException {
-        List<LoanInstallmentDto> installments = loanService.findInstallmentsForLoan(loanId);
-        return ResponseEntity.ok(installments);
+    @CheckLoanAccessForLoanId
+    public ResponseEntity<List<LoanInstallmentDto>> getLoanInstallments(@PathVariable Long loanId) {
+        return ResponseEntity.ok(loanService.findInstallmentsForLoan(loanId));
     }
 
-
-    @Operation(summary = "Delete loan by ID")
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteLoan(@PathVariable Long loanId) {
-        loanService.delete(loanId);
-        return ResponseEntity.noContent().build();
+    @Operation(
+            summary = "Retrieve all loans for a customer",
+            description = "Fetches loans for the given customer ID. Customers can only access their own loans."
+    )
+    @GetMapping("/customers/{customerId}/loans")
+    @CheckLoanAccessForCustomerId
+    public ResponseEntity<List<LoanDto>> getAllLoansForCustomerId(@PathVariable  Long customerId) {
+        return ResponseEntity.ok(loanService.findByIdForCurrentUser(customerId));
     }
 }
-

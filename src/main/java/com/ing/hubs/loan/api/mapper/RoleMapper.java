@@ -1,7 +1,7 @@
 package com.ing.hubs.loan.api.mapper;
 
-import com.ing.hubs.loan.api.dto.RoleDto;
-import com.ing.hubs.loan.api.model.Role;
+import com.ing.hubs.loan.api.model.dto.RoleDto;
+import com.ing.hubs.loan.api.model.entity.Role;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
